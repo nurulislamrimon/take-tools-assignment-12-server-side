@@ -16,6 +16,15 @@ const run = async () => {
     client.connect();
     try {
         const productsCollection = client.db("productsCollection").collection("product")
+        const usersCollection = client.db("usersCollection").collection("user")
+
+
+        app.post('/user', async (req, res) => {
+            const newUserEmail = req.body.email;
+            const result = await usersCollection.insertOne({ email: newUserEmail })
+            res.send(result)
+            console.log(`${newUserEmail} is inserted`);
+        })
 
         app.get('/products', async (req, res) => {
             const query = {};
