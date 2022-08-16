@@ -19,9 +19,20 @@ const run = async () => {
         const usersCollection = client.db("usersCollection").collection("user")
 
 
-        app.post('/user', async (req, res) => {
+        app.put('/user', async (req, res) => {
             const newUserEmail = req.body.email;
-            const result = await usersCollection.insertOne({ email: newUserEmail })
+            const result = await usersCollection.update(
+                {
+                    "email": newUserEmail
+                },
+                {
+                    "$set": {
+                        "email": newUserEmail
+                    }
+                },
+                {
+                    "upsert": true
+                })
             res.send(result)
             console.log(`${newUserEmail} is inserted`);
         })
