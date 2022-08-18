@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
 
@@ -21,7 +21,7 @@ const run = async () => {
 
         app.put('/user', async (req, res) => {
             const newUserEmail = req.body.email;
-            const result = await usersCollection.update(
+            const result = await usersCollection.updateOne(
                 {
                     "email": newUserEmail
                 },
@@ -39,12 +39,42 @@ const run = async () => {
 
         app.get('/products', async (req, res) => {
             const query = {};
-            const result = await productsCollection.find(query).toArray();
+            const limit = parseInt(req.query.limit);
+            const result = await productsCollection.find(query).limit(limit).toArray();
             res.send(result);
-            console.log('products are responding');
+            console.log(`${limit} products are responding`);
         })
 
+        app.get('/product', async (req, res) => {
+            const id = req.query.id;
+            const query = { _id: ObjectId(id) };
+            const result = await productsCollection.findOne(query);
+            res.send(result);
+            console.log(`${id} product is responding`);
+        })
 
+        app.put('/product', async (req, res) => {
+            const id = req.query.id;
+            const query = { _id: ObjectId(id) };
+            const newData = req.body.data;
+            const supplier = req.body.supplier;
+            const update = {
+                $set: {
+                    name: newData.name,
+                    price: newData.price,
+                    availableQty: newData.availableQty,
+                    minOrderQty: newData.minOrderQty,
+                    about: newData.about,
+                    picture: newData.picture,
+                    supplier: supplier
+                }
+            }
+            const result = await productsCollection.updateOne(query, update, { upsert: true });
+            // const result = await productsCollection.findOne(query);
+
+            res.send(result);
+            console.log(`${id} is updated`);
+        })
 
 
         app.get('/', (req, res) => {
