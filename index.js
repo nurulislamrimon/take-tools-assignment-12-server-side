@@ -1,9 +1,10 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port = process.env.PORT || 5000;
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const jwt = require('jsonwebtoken');
 
 // middleware============
 app.use(cors());
@@ -21,6 +22,7 @@ const run = async () => {
         // upsert user======================
         app.put('/user', async (req, res) => {
             const newUserEmail = req.body.email;
+            const accessToken = jwt.sign({ email: newUserEmail }, process.env.JWT_Secret, { expiresIn: '1d' });
             const result = await usersCollection.updateOne(
                 {
                     "email": newUserEmail
@@ -33,10 +35,10 @@ const run = async () => {
                 {
                     "upsert": true
                 })
-            res.send(result)
+            res.send({ result: result, accessToken: accessToken })
             console.log(`${newUserEmail} is inserted`);
         })
-        // read all Product===============================
+        // read all Products===============================
         app.get('/products', async (req, res) => {
             const query = {};
             const limit = parseInt(req.query?.limit);
@@ -44,7 +46,8 @@ const run = async () => {
             res.send(result);
             console.log(`${limit} products are responding`);
         })
-        // read specific product=====================
+        // =================Product==================
+        // read specific product-------
         app.get('/product', async (req, res) => {
             const id = req.query.id;
             const query = { _id: ObjectId(id) };
@@ -52,7 +55,7 @@ const run = async () => {
             res.send(result);
             console.log(`${id} product is responding`);
         })
-        // update a product data=======================
+        // update a product data--------
         app.put('/product', async (req, res) => {
             const id = req.query.id;
             const query = { _id: ObjectId(id) };
@@ -65,7 +68,15 @@ const run = async () => {
             res.send(result);
             console.log(`${id} is updated`);
         })
-        // Add new product=======================
+        // delete a product--------
+        app.delete('/product', async (req, res) => {
+            const id = req.query.id;
+            const query = { _id: ObjectId(id) };
+            const result = await productsCollection.deleteOne(query);
+            res.send(result);
+            console.log(`${id} is deleted`);
+        })
+        // ================Add new product=======================
         app.post('/addProduct', async (req, res) => {
             const newData = req.body;
             const result = await productsCollection.insertOne(newData);
