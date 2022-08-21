@@ -17,7 +17,21 @@ const run = async () => {
     client.connect();
     try {
         const productsCollection = client.db("productsCollection").collection("product")
-        const usersCollection = client.db("usersCollection").collection("user")
+        const usersCollection = client.db("usersCollection").collection("user");
+        // middleware for verification
+        const verifyJWT = (req, res, next) => {
+            const accessToken = req?.headers?.bearer;
+            if (!accessToken) {
+                return res.status(401).send({ result: 'Unauthorized access' })
+            }
+            jwt.verify(accessToken, process.env.JWT_Secret, function (err, decoded) {
+                if (err) {
+                    return res.status(401).send({ result: 'Unauthrized access' });
+                }
+                req.decoded = decoded;
+                next();
+            })
+        }
 
         // upsert user======================
         app.put('/user', async (req, res) => {
@@ -38,15 +52,22 @@ const run = async () => {
             res.send({ result: result, accessToken: accessToken })
             console.log(`${newUserEmail} is inserted`);
         })
-        // read all Products===============================
-        app.get('/products', async (req, res) => {
+        // ============== Products==================
+        app.get('/allProducts', async (req, res) => {
             const query = {};
             const limit = parseInt(req.query?.limit);
             const result = await productsCollection.find(query).limit(limit).toArray();
             res.send(result);
             console.log(`${limit} products are responding`);
         })
-        // =================Product==================
+        // read all specific user's Products===============================
+        app.get('/products', verifyJWT, async (req, res) => {
+            const email = req?.decoded?.email;
+            const query = { supplier: email };
+            const result = await productsCollection.find(query).toArray();
+            res.send(result);
+            console.log(`${email} products are responding`);
+        })
         // read specific product-------
         app.get('/product', async (req, res) => {
             const id = req.query.id;
