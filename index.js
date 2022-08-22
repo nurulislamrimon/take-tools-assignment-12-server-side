@@ -61,12 +61,16 @@ const run = async () => {
             console.log(`${limit} products are responding`);
         })
         // read all specific user's Products===============================
-        app.get('/products', verifyJWT, async (req, res) => {
-            const email = req?.decoded?.email;
-            const query = { supplier: email };
+        app.get('/myProducts/:email', verifyJWT, async (req, res) => {
+            const userEmail = req?.decoded?.email;
+            const filteringEmail = req?.params?.email;
+            if (userEmail !== filteringEmail) {
+                return res.status(403).send({ result: 'Access denied' })
+            }
+            const query = { supplier: filteringEmail };
             const result = await productsCollection.find(query).toArray();
             res.send(result);
-            console.log(`${email} products are responding`);
+            console.log(`${filteringEmail} products are responding`);
         })
         // read specific product-------
         app.get('/product', async (req, res) => {
