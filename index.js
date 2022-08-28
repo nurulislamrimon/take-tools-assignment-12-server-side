@@ -16,9 +16,10 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 const run = async () => {
     client.connect();
     try {
-        const productsCollection = client.db("productsCollection").collection("product")
         const usersCollection = client.db("usersCollection").collection("user");
-        // middleware for verification
+        const productsCollection = client.db("productsCollection").collection("product")
+        const cartProductCollection = client.db("cartProductCollection").collection("cartProduct")
+        // middleware for verification==========================
         const verifyJWT = (req, res, next) => {
             const accessToken = req?.headers?.bearer;
             if (!accessToken) {
@@ -33,7 +34,7 @@ const run = async () => {
             })
         }
 
-        // upsert user======================
+        // ===============upsert user======================
         app.put('/user', async (req, res) => {
             const newUserEmail = req.body.email;
             const accessToken = jwt.sign({ email: newUserEmail }, process.env.JWT_Secret, { expiresIn: '1d' });
@@ -60,18 +61,6 @@ const run = async () => {
             res.send(result);
             console.log(`${limit} products are responding`);
         })
-        // read all specific user's Products===============================
-        app.get('/myProducts/:email', verifyJWT, async (req, res) => {
-            const userEmail = req?.decoded?.email;
-            const filteringEmail = req?.params?.email;
-            if (userEmail !== filteringEmail) {
-                return res.status(403).send({ result: 'Access denied' })
-            }
-            const query = { supplier: filteringEmail };
-            const result = await productsCollection.find(query).toArray();
-            res.send(result);
-            console.log(`${filteringEmail} products are responding`);
-        })
         // read specific product-------
         app.get('/product', async (req, res) => {
             const id = req.query.id;
@@ -80,6 +69,20 @@ const run = async () => {
             res.send(result);
             console.log(`${id} product is responding`);
         })
+        // ==============Admin Crud operation=============
+        app.get('/manageProducts/:email', verifyJWT, async (req, res) => {
+            const userEmail = req?.decoded?.email;
+            const filteringEmail = req?.params?.email;
+            if (userEmail !== filteringEmail) {
+                return res.status(403).send({ result: 'Access denied' })
+            }
+            // const query = { supplier: filteringEmail };
+            const query = {};
+            const result = await productsCollection.find(query).toArray();
+            res.send(result);
+            console.log(`manage products are responding`);
+        })
+
         // update a product data--------
         app.put('/product', async (req, res) => {
             const id = req.query.id;
@@ -101,12 +104,31 @@ const run = async () => {
             res.send(result);
             console.log(`${id} is deleted`);
         })
-        // ================Add new product=======================
+        // Add new product--------------
         app.post('/addProduct', async (req, res) => {
             const newData = req.body;
             const result = await productsCollection.insertOne(newData);
             res.send(result);
             console.log(`New product added`);
+        })
+
+        // ============= Client====================
+        // add an item on cart------
+        app.put('/cartItem', async (req, res) => {
+            const productId = req.body?.productId;
+            const query = { productId: productId }
+            const newCart = { $set: req.body };
+            const result = await cartProductCollection.updateOne(query, newCart, { upsert: true });
+            res.send(result)
+            console.log(`${productId} is added to cart`);
+        })
+        // get all carted items---------
+        app.get('/cartItems/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { user: email }
+            const result = await cartProductCollection.find(query).toArray();
+            res.send(result);
+            // console.log(query);
         })
 
         // initial response =========================================
