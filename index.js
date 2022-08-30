@@ -34,24 +34,51 @@ const run = async () => {
             })
         }
 
-        // ===============upsert user======================
+        // ===============user======================
+        // upsert user---------------
         app.put('/user', async (req, res) => {
             const newUserEmail = req.body.email;
+            const newUser = req.body;
+
             const accessToken = jwt.sign({ email: newUserEmail }, process.env.JWT_Secret, { expiresIn: '1d' });
             const result = await usersCollection.updateOne(
                 {
                     "email": newUserEmail
                 },
                 {
-                    "$set": {
-                        "email": newUserEmail
-                    }
+                    "$set": newUser
                 },
                 {
                     "upsert": true
                 })
             res.send({ result: result, accessToken: accessToken })
             console.log(`${newUserEmail} is inserted`);
+        })
+        // get user information
+        app.get('/user/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { email: email }
+            const result = await usersCollection.findOne(query);
+            res.send(result);
+            console.log(`${email} information is responding`);
+        })
+        // update user information---------------
+        app.put('/updateUser/:email', async (req, res) => {
+            const userEmail = req.params.email;
+            const updateData = req.body;
+
+            const result = await usersCollection.updateOne(
+                {
+                    "email": userEmail
+                },
+                {
+                    "$set": updateData
+                },
+                {
+                    upsert: true
+                })
+            res.send(result)
+            console.log(`${userEmail} is updated`);
         })
         // ============== Products==================
         app.get('/allProducts', async (req, res) => {
@@ -125,10 +152,10 @@ const run = async () => {
         // get all carted items---------
         app.get('/cartItems/:email', async (req, res) => {
             const email = req.params.email;
-            const query = { user: email }
+            const query = { customer: email }
             const result = await cartProductCollection.find(query).toArray();
             res.send(result);
-            // console.log(query);
+            console.log(`${email} carted items responding`);
         })
 
         // initial response =========================================
