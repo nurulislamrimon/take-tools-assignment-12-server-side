@@ -23,11 +23,11 @@ const run = async () => {
         const verifyJWT = (req, res, next) => {
             const accessToken = req?.headers?.bearer;
             if (!accessToken) {
-                return res.status(401).send({ result: 'Unauthorized access' })
+                return res.status(401).send({ message: 'Unauthorized access' })
             }
             jwt.verify(accessToken, process.env.JWT_Secret, function (err, decoded) {
                 if (err) {
-                    return res.status(401).send({ result: 'Unauthrized access' });
+                    return res.status(401).send({ message: 'Unauthrized access' });
                 }
                 req.decoded = decoded;
                 next();
@@ -55,7 +55,7 @@ const run = async () => {
             console.log(`${newUserEmail} is inserted`);
         })
         // get user information
-        app.get('/user/:email', async (req, res) => {
+        app.get('/user/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const query = { email: email }
             const result = await usersCollection.findOne(query);
@@ -63,7 +63,7 @@ const run = async () => {
             console.log(`${email} information is responding`);
         })
         // update user information---------------
-        app.put('/updateUser/:email', async (req, res) => {
+        app.put('/updateUser/:email', verifyJWT, async (req, res) => {
             const userEmail = req.params.email;
             const updateData = req.body;
 
@@ -98,12 +98,6 @@ const run = async () => {
         })
         // ==============Admin Crud operation=============
         app.get('/manageProducts/:email', verifyJWT, async (req, res) => {
-            const userEmail = req?.decoded?.email;
-            const filteringEmail = req?.params?.email;
-            if (userEmail !== filteringEmail) {
-                return res.status(403).send({ result: 'Access denied' })
-            }
-            // const query = { supplier: filteringEmail };
             const query = {};
             const result = await productsCollection.find(query).toArray();
             res.send(result);
@@ -141,7 +135,7 @@ const run = async () => {
 
         // ============= Client====================
         // add an item on cart------
-        app.put('/cartItem', async (req, res) => {
+        app.put('/cartItem', verifyJWT, async (req, res) => {
             const productId = req.body?.productId;
             const query = { productId: productId }
             const newCart = { $set: req.body };
@@ -150,12 +144,20 @@ const run = async () => {
             console.log(`${productId} is added to cart`);
         })
         // get all carted items---------
-        app.get('/cartItems/:email', async (req, res) => {
+        app.get('/cartItems/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
             const query = { customer: email }
             const result = await cartProductCollection.find(query).toArray();
             res.send(result);
             console.log(`${email} carted items responding`);
+        })
+        // delete a item from cart
+        app.delete('/cartItem', async (req, res) => {
+            const id = req.query.id;
+            const query = { _id: ObjectId(id) };
+            const result = await cartProductCollection.deleteOne(query);
+            res.send(result)
+            console.log(`${id} has been deleted`);
         })
 
         // initial response =========================================
