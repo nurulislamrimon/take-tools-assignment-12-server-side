@@ -18,7 +18,9 @@ const run = async () => {
     try {
         const usersCollection = client.db("usersCollection").collection("user");
         const productsCollection = client.db("productsCollection").collection("product")
-        const cartProductCollection = client.db("cartProductCollection").collection("cartProduct")
+        const orderCollection = client.db("orderCollection").collection("orderedProduct")
+
+
         // middleware for verification==========================
         const verifyJWT = (req, res, next) => {
             const accessToken = req?.headers?.bearer;
@@ -33,6 +35,7 @@ const run = async () => {
                 next();
             })
         }
+
 
         // ===============user======================
         // upsert user---------------
@@ -135,19 +138,23 @@ const run = async () => {
 
         // ============= Client====================
         // add an item on cart------
-        app.put('/cartItem', verifyJWT, async (req, res) => {
+        app.put('/orderItem', verifyJWT, async (req, res) => {
             const productId = req.body?.productId;
             const query = { productId: productId }
             const newCart = { $set: req.body };
-            const result = await cartProductCollection.updateOne(query, newCart, { upsert: true });
+            const result = await orderCollection.updateOne(query, newCart, { upsert: true });
             res.send(result)
             console.log(`${productId} is added to cart`);
         })
         // get all carted items---------
-        app.get('/cartItems/:email', verifyJWT, async (req, res) => {
+        app.get('/orderItems/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
+            const userEmail = req.decoded;
+            // if (email !== userEmail) {
+            //     return res.status(403).send({ message: 'unauthorized access' })
+            // }
             const query = { customer: email }
-            const result = await cartProductCollection.find(query).toArray();
+            const result = await orderCollection.find(query).toArray();
             res.send(result);
             console.log(`${email} carted items responding`);
         })
@@ -155,7 +162,7 @@ const run = async () => {
         app.delete('/cartItem', async (req, res) => {
             const id = req.query.id;
             const query = { _id: ObjectId(id) };
-            const result = await cartProductCollection.deleteOne(query);
+            const result = await orderCollection.deleteOne(query);
             res.send(result)
             console.log(`${id} has been deleted`);
         })
