@@ -19,6 +19,7 @@ const run = async () => {
         const usersCollection = client.db("usersCollection").collection("user");
         const productsCollection = client.db("productsCollection").collection("product")
         const orderCollection = client.db("orderCollection").collection("orderedProduct")
+        const reviewsCollection = client.db("reviewsCollection").collection("review")
 
 
         // middleware for verification==========================
@@ -121,7 +122,7 @@ const run = async () => {
             console.log(`${id} is updated`);
         })
         // delete a product--------
-        app.delete('/product', async (req, res) => {
+        app.delete('/product', verifyJWT, async (req, res) => {
             const id = req.query.id;
             const query = { _id: ObjectId(id) };
             const result = await productsCollection.deleteOne(query);
@@ -166,7 +167,21 @@ const run = async () => {
             res.send(result)
             console.log(`${id} has been deleted`);
         })
-
+        // add review-------------------
+        app.post('/review', async (req, res) => {
+            const newReview = req.body;
+            const result = await reviewsCollection.insertOne(newReview);
+            res.send(result)
+            console.log('New review added');
+        })
+        // get reviews---------------------
+        app.get('/review', async (req, res) => {
+            const limit = parseInt(req.query.limit);
+            const query = {};
+            const result = await reviewsCollection.find(query).limit(limit).toArray();
+            res.send(result)
+            console.log(`${limit} reviews are responding`);
+        })
         // initial response =========================================
         app.get('/', (req, res) => {
             res.send('hello')
