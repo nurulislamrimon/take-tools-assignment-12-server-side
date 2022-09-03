@@ -23,6 +23,7 @@ const run = async () => {
 
 
         // middleware for verification==========================
+        // JsonWebToken verification-------
         const verifyJWT = (req, res, next) => {
             const accessToken = req?.headers?.bearer;
             if (!accessToken) {
@@ -37,6 +38,16 @@ const run = async () => {
             })
         }
 
+        // admin verification------------
+        const verifyAdmin = async (req, res, next) => {
+            const requester = req.decoded.email;
+            const query = { email: requester };
+            const result = await usersCollection.findOne(query);
+            if (result?.role === 'admin') {
+                next();
+            }
+            res.status(401).send('unauthorized access');
+        }
 
         // ===============user======================
         // upsert user---------------
@@ -83,6 +94,23 @@ const run = async () => {
                 })
             res.send(result)
             console.log(`${userEmail} is updated`);
+        })
+        // get all user information
+        app.get('/users', verifyJWT, async (req, res) => {
+            const query = {}
+            const result = await usersCollection.find(query).toArray();
+            res.send(result);
+            console.log(`all user is responding`);
+        })
+        // admin-------------------
+        app.put('/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
+            const requister = req.params.email;
+            const query = { email: requister };
+            const result = await usersCollection.updateOne(query, {
+                $set: { role: 'admin' }
+            })
+            res.send(result)
+            console.log(userEmail);
         })
         // ============== Products==================
         app.get('/allProducts', async (req, res) => {
