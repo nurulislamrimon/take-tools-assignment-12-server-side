@@ -45,8 +45,9 @@ const run = async () => {
             const result = await usersCollection.findOne(query);
             if (result?.role === 'admin') {
                 next();
+            } else {
+                res.status(401).send('unauthorized access');
             }
-            res.status(401).send('unauthorized access');
         }
 
         // ===============user======================
@@ -96,7 +97,7 @@ const run = async () => {
             console.log(`${userEmail} is updated`);
         })
         // get all user information
-        app.get('/users', verifyJWT, async (req, res) => {
+        app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
             const query = {}
             const result = await usersCollection.find(query).toArray();
             res.send(result);
@@ -104,13 +105,13 @@ const run = async () => {
         })
         // admin-------------------
         app.put('/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
-            const requister = req.params.email;
-            const query = { email: requister };
+            const newAdmin = req.params.email;
+            const query = { email: newAdmin };
             const result = await usersCollection.updateOne(query, {
                 $set: { role: 'admin' }
             })
             res.send(result)
-            console.log(userEmail);
+            console.log(`${newAdmin} is assigned to admin`);
         })
         // ============== Products==================
         app.get('/allProducts', async (req, res) => {
@@ -129,7 +130,7 @@ const run = async () => {
             console.log(`${id} product is responding`);
         })
         // ==============Admin Crud operation=============
-        app.get('/manageProducts/:email', verifyJWT, async (req, res) => {
+        app.get('/manageProducts', verifyJWT, verifyAdmin, async (req, res) => {
             const query = {};
             const result = await productsCollection.find(query).toArray();
             res.send(result);
