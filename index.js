@@ -96,19 +96,30 @@ const run = async () => {
             res.send(result)
             console.log(`${userEmail} is updated`);
         })
-        // get all user information
+        // admin=====================
+        // get all user information---------
         app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
             const query = {}
             const result = await usersCollection.find(query).toArray();
             res.send(result);
             console.log(`all user is responding`);
         })
-        // admin-------------------
+        // add an admin---------------
         app.put('/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
             const newAdmin = req.params.email;
             const query = { email: newAdmin };
             const result = await usersCollection.updateOne(query, {
                 $set: { role: 'admin' }
+            })
+            res.send(result)
+            console.log(`${newAdmin} is assigned to admin`);
+        })
+        // remove an admin---------------
+        app.put('/removeAdmin/:email', verifyJWT, verifyAdmin, async (req, res) => {
+            const newAdmin = req.params.email;
+            const query = { email: newAdmin };
+            const result = await usersCollection.updateOne(query, {
+                $set: { role: 'member' }
             })
             res.send(result)
             console.log(`${newAdmin} is assigned to admin`);
@@ -138,7 +149,7 @@ const run = async () => {
         })
 
         // update a product data--------
-        app.put('/product', async (req, res) => {
+        app.put('/product', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.query.id;
             const query = { _id: ObjectId(id) };
             const newData = req.body;
@@ -151,7 +162,7 @@ const run = async () => {
             console.log(`${id} is updated`);
         })
         // delete a product--------
-        app.delete('/product', verifyJWT, async (req, res) => {
+        app.delete('/product', verifyJWT, verifyAdmin, async (req, res) => {
             const id = req.query.id;
             const query = { _id: ObjectId(id) };
             const result = await productsCollection.deleteOne(query);
@@ -159,7 +170,7 @@ const run = async () => {
             console.log(`${id} is deleted`);
         })
         // Add new product--------------
-        app.post('/addProduct', async (req, res) => {
+        app.post('/addProduct', verifyJWT, verifyAdmin, async (req, res) => {
             const newData = req.body;
             const result = await productsCollection.insertOne(newData);
             res.send(result);
