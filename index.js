@@ -96,7 +96,7 @@ const run = async () => {
             res.send(result)
             console.log(`${userEmail} is updated`);
         })
-        // admin=====================
+        // admin user crud=====================
         // get all user information---------
         app.get('/users', verifyJWT, verifyAdmin, async (req, res) => {
             const query = {}
@@ -140,7 +140,7 @@ const run = async () => {
             res.send(result);
             console.log(`${id} product is responding`);
         })
-        // ==============Admin Crud operation=============
+        // ==============Admin products and orders Crud operation=============
         app.get('/manageProducts', verifyJWT, verifyAdmin, async (req, res) => {
             const query = {};
             const result = await productsCollection.find(query).toArray();
@@ -176,6 +176,13 @@ const run = async () => {
             res.send(result);
             console.log(`New product added`);
         })
+        // get all orders---------
+        app.get('/orderItems', verifyJWT, verifyAdmin, async (req, res) => {
+            const query = {}
+            const result = await orderCollection.find(query).toArray();
+            res.send(result);
+            console.log(`all orders responding`);
+        })
 
         // ============= Client====================
         // add an item on cart------
@@ -187,13 +194,13 @@ const run = async () => {
             res.send(result)
             console.log(`${productId} is added to cart`);
         })
-        // get all carted items---------
+        // get user orders---------
         app.get('/orderItems/:email', verifyJWT, async (req, res) => {
             const email = req.params.email;
-            const userEmail = req.decoded;
-            // if (email !== userEmail) {
-            //     return res.status(403).send({ message: 'unauthorized access' })
-            // }
+            const userEmail = req.decoded.email;
+            if (email !== userEmail) {
+                return res.status(403).send({ message: 'unauthorized access' })
+            }
             const query = { customer: email }
             const result = await orderCollection.find(query).toArray();
             res.send(result);
