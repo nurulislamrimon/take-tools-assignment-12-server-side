@@ -25,7 +25,7 @@ const run = async () => {
         // middleware for verification==========================
         // JsonWebToken verification-------
         const verifyJWT = (req, res, next) => {
-            const accessToken = req?.headers?.bearer;
+            const accessToken = req?.headers?.authentication;
             if (!accessToken) {
                 return res.status(401).send({ message: 'Unauthorized access' })
             }
@@ -69,6 +69,7 @@ const run = async () => {
                 })
             res.send({ result: result, accessToken: accessToken })
             console.log(`${newUserEmail} is inserted`);
+
         })
         // get user information
         app.get('/user/:email', verifyJWT, async (req, res) => {
@@ -206,13 +207,21 @@ const run = async () => {
             res.send(result);
             console.log(`${email} carted items responding`);
         })
-        // delete a item from cart
-        app.delete('/cartItem', async (req, res) => {
+        // delete an item from cart
+        app.delete('/orderItem', verifyJWT, async (req, res) => {
             const id = req.query.id;
             const query = { _id: ObjectId(id) };
             const result = await orderCollection.deleteOne(query);
             res.send(result)
             console.log(`${id} has been deleted`);
+        })
+        // get a specific item from cart
+        app.get('/orderItem/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const result = await orderCollection.findOne(query);
+            res.send(result)
+            console.log(`${id} is responding`);
         })
         // add review-------------------
         app.post('/review', async (req, res) => {
