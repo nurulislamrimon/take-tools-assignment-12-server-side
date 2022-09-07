@@ -5,6 +5,8 @@ const app = express();
 const port = process.env.PORT || 5000;
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const jwt = require('jsonwebtoken');
+const stripe = require('stripe')(process.env.Stripe_Secret_Key);
+
 
 // middleware============
 app.use(cors());
@@ -237,6 +239,32 @@ const run = async () => {
             const result = await reviewsCollection.find(query).limit(limit).toArray();
             res.send(result)
             console.log(`${limit} reviews are responding`);
+        })
+        // =============Payment==================
+        app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+            const { totalPrice } = req.body;
+            const amount = parseInt(totalPrice) * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: 'usd',
+                payment_method_types: ['card']
+            })
+            res.send({
+                clientSecret: paymentIntent.client_secret
+            })
+            console.log('Payment intent is responding')
+        })
+        app.patch('/payment/:id', verifyJWT, async (req, res) => {
+            const { trxId } = req.body;
+            const id = req.params.id;
+            const filter = { _id: ObjectId(id) };
+            const updateDoc = {
+                paid: true,
+                trxId: trxId
+            }
+            const result = await orderCollection.updateOne(filter, { $set: updateDoc })
+            res.send(result)
+            console.log('Payment successfully added on db');
         })
         // initial response =========================================
         app.get('/', (req, res) => {
