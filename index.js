@@ -189,13 +189,11 @@ const run = async () => {
 
         // ============= Client====================
         // add an item on cart------
-        app.put('/orderItem', verifyJWT, async (req, res) => {
-            const productId = req.body?.productId;
-            const query = { productId: productId }
-            const newCart = { $set: req.body };
-            const result = await orderCollection.updateOne(query, newCart, { upsert: true });
+        app.post('/orderItem', verifyJWT, async (req, res) => {
+            const newCart = req.body;
+            const result = await orderCollection.insertOne(newCart);
             res.send(result)
-            console.log(`${productId} is added to cart`);
+            console.log(`new product is added to cart`);
         })
         // get user orders---------
         app.get('/orderItems/:email', verifyJWT, async (req, res) => {
