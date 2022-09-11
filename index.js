@@ -19,9 +19,10 @@ const run = async () => {
     client.connect();
     try {
         const usersCollection = client.db("usersCollection").collection("user");
+        const bannerCollection = client.db("bannerCollection").collection("banner");
         const productsCollection = client.db("productsCollection").collection("product")
-        const orderCollection = client.db("orderCollection").collection("orderedProduct")
-        const reviewsCollection = client.db("reviewsCollection").collection("review")
+        const orderCollection = client.db("orderCollection").collection("orderedProduct");
+        const reviewsCollection = client.db("reviewsCollection").collection("review");
 
 
         // middleware for verification==========================
@@ -51,7 +52,14 @@ const run = async () => {
                 res.status(401).send('unauthorized access');
             }
         }
-
+        // ===============banner=======================
+        app.get('/banners', async (req, res) => {
+            const limit = parseInt(req.query.limit);
+            const query = {};
+            const result = await bannerCollection.find(query).limit(limit).toArray();
+            res.send(result);
+            console.log('banners are responsing');
+        })
         // ===============user======================
         // upsert user---------------
         app.put('/user', async (req, res) => {
@@ -185,6 +193,14 @@ const run = async () => {
             const result = await orderCollection.find(query).toArray();
             res.send(result);
             console.log(`all orders responding`);
+        })
+        app.patch('/status', async (req, res) => {
+            const id = req.body.id;
+            const query = { _id: ObjectId(id) }
+            const result = await orderCollection.updateOne(query, { $set: { shipped: true } });
+
+            res.send(result)
+            console.log('status changed');
         })
 
         // ============= Client====================
